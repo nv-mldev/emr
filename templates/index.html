@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pediatric Oncology Speech-to-Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pediatric Oncology Speech-to-Report Generator</h1>
+            <p>Convert clinical voice notes to structured discharge summaries</p>
+        </header>
+
+        <main>
+            <div class="recording-section">
+                <div class="controls">
+                    <button id="startRecord" class="btn btn-primary">
+                        🎤 Start Recording
+                    </button>
+                    <button id="stopRecord" class="btn btn-secondary" disabled>
+                        ⏹️ Stop Recording
+                    </button>
+                    <button id="generateReport" class="btn btn-success" disabled>
+                        📄 Generate Report
+                    </button>
+                </div>
+                
+                <div class="status">
+                    <span id="recordingStatus">Ready to record</span>
+                    <div id="recordingTime">00:00</div>
+                </div>
+                
+                <div class="recording-info">
+                    <small>🎤 Medical dictation supported • Automatic chunking for long recordings • 5-minute maximum</small>
+                </div>
+            </div>
+
+            <div class="content-sections">
+                <section class="transcription-section">
+                    <h2>Real-time Transcription</h2>
+                    <div id="transcriptionArea" class="text-area">
+                        Transcribed text will appear here...
+                    </div>
+                </section>
+
+                <section class="json-section">
+                    <h2>Structured Data (JSON)</h2>
+                    <pre id="jsonOutput" class="json-output">
+                        Structured data will appear here after processing...
+                    </pre>
+                </section>
+
+                <section class="report-section">
+                    <h2>Discharge Summary</h2>
+                    <div id="reportOutput" class="report-output">
+                        Generated discharge summary will appear here...
+                    </div>
+                    <div class="export-controls">
+                        <button id="exportJson" class="btn btn-outline" disabled>Export JSON</button>
+                        <button id="exportText" class="btn btn-outline" disabled>Export Text</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Pediatric Oncology Department - Speech-to-Report System</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
