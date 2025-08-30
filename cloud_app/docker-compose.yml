@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # Database Services
+  mongodb:
+    image: mongo:7.0
+    container_name: mediscribe_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: mediscribe
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mediscribe_network
+
+  # Google Cloud Storage will be used - no local storage needed
+
+  # Microservices
+  auth-service:
+    build: ./services/auth-service
+    container_name: auth_service
+    ports:
+      - "5001:5000"
+    environment:
+      - MONGODB_URL=mongodb://admin:password123@mongodb:27017/mediscribe?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - mediscribe_network
+
+  patient-service:
+    build: ./services/patient-service
+    container_name: patient_service
+    ports:
+      - "5002:5000"
+    environment:
+      - MONGODB_URL=mongodb://admin:password123@mongodb:27017/mediscribe?authSource=admin
+      - AUTH_SERVICE_URL=http://auth-service:5000
+    depends_on:
+      - mongodb
+      - auth-service
+    networks:
+      - mediscribe_network
+
+  upload-service:
+    build: ./services/upload-service
+    container_name: upload_service
+    ports:
+      - "5003:5000"
+    environment:
+      - MONGODB_URL=mongodb://admin:password123@mongodb:27017/mediscribe?authSource=admin
+      - AUTH_SERVICE_URL=http://auth-service:5000
+      - GCS_BUCKET_NAME=mediscribe-audio
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-key.json
+      - SPEECH_SERVICE_WEBHOOK=http://speech-service:5000/process-audio
+    depends_on:
+      - mongodb
+      - auth-service
+    volumes:
+      - ./google-credentials:/app
+    networks:
+      - mediscribe_network
+
+  speech-service:
+    build: ./services/speech-service
+    container_name: speech_service
+    ports:
+      - "5004:5000"
+    environment:
+      - MONGODB_URL=mongodb://admin:password123@mongodb:27017/mediscribe?authSource=admin
+      - GCS_BUCKET_NAME=mediscribe-audio
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-key.json
+      - PATIENT_SERVICE_URL=http://patient-service:5000
+    depends_on:
+      - mongodb
+    volumes:
+      - ./google-credentials:/app
+    networks:
+      - mediscribe_network
+
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: api_gateway
+    ports:
+      - "5000:5000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:5000
+      - PATIENT_SERVICE_URL=http://patient-service:5000
+      - UPLOAD_SERVICE_URL=http://upload-service:5000
+    depends_on:
+      - auth-service
+      - patient-service
+      - upload-service
+    networks:
+      - mediscribe_network
+
+  # Frontend
+  frontend:
+    build: ./frontend
+    container_name: mediscribe_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    depends_on:
+      - api-gateway
+    networks:
+      - mediscribe_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  mediscribe_network:
+    driver: bridge
